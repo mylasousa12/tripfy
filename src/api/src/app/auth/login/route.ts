@@ -14,7 +14,7 @@ export async function POST(request: Request) {
             return retrieveFailResponse();
         }
 
-        const user: { password: string } | null = await prisma.users.findUnique({
+        const user: { password: string, id:number } | null = await prisma.users.findUnique({
             where: {email: body.email}
         });
 
@@ -23,8 +23,9 @@ export async function POST(request: Request) {
         }
 
         if (await bcrypt.compare(validation.password, user.password)) {
-            // const token = generateToken(user.)
-            return Response.json({body: body});
+            const token = generateToken(user.id);
+            return Response.json({body: body, token})
+
         }
 
 
