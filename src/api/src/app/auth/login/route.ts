@@ -14,7 +14,7 @@ export async function POST(request: Request) {
             return retrieveFailResponse();
         }
 
-        const user: { password: string, id:number } | null = await prisma.users.findUnique({
+        const user: { password: string, id: number } | null = await prisma.users.findUnique({
             where: {email: body.email}
         });
 
@@ -24,10 +24,9 @@ export async function POST(request: Request) {
 
         if (await bcrypt.compare(validation.password, user.password)) {
             const token = generateToken(user.id);
-            return Response.json({body: body, token})
-
+            user.password = '***';
+            return Response.json({user: user, token});
         }
-
 
         return retrieveFailResponse();
     } catch (error) {
@@ -35,13 +34,13 @@ export async function POST(request: Request) {
             return Response.json({errors: z.flattenError(error)}, {status: 400})
         }
 
-        return Response.json({message: "Erro no servidor"}, {status: 500});
+        return Response.json({message: "Server error"}, {status: 500});
     }
 }
 
 function retrieveFailResponse() {
     return Response.json(
-        {error: 'Credencial invalida'},
+        {error: 'Invalid credential'},
         {status: 401}
     );
 }

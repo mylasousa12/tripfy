@@ -25,13 +25,13 @@ export async function POST(request: Request) {
         });
 
         return Response.json({
-            message: 'Usuário criado com sucesso',
+            message: 'Created user',
         });
     } catch (error) {
         if (error instanceof ZodError) {
             return Response.json({errors: z.flattenError(error)}, {status: 400})
         }
 
-        return Response.json({message: "Erro no servidor"}, {status: 500});
+        return Response.json({message: "Server error"}, {status: 500});
     }
 }
