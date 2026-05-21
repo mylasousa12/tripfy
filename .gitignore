@@ -2,6 +2,7 @@
 /logs
 /data
 .env
+.log
 /.project
 .docker-sync
 /jenkins/jenkins_home
