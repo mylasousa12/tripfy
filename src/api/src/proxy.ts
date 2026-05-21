@@ -10,6 +10,7 @@ export function proxy(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
 
     const token:string | undefined = authHeader?.split('')[1];
+    console.log(token)
 
     if (!token){
         return NextResponse.json(
@@ -35,5 +36,7 @@ function publicRoutes(): Array<string> {
     return [
         '/auth/login',
         '/auth/register',
+        '/auth/forgot-password',
+        '/auth/forgot-password/request',
     ];
 }

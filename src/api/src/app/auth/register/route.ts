@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         });
 
         return Response.json({
-            message: 'Created user',
+            message: "User created",
         });
     } catch (error) {
         if (error instanceof ZodError) {

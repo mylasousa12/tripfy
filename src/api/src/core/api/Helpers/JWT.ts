@@ -1,7 +1,8 @@
 import * as jwt from 'jsonwebtoken';
+import {Env} from "@/core/api/Helpers/Env";
 
-const jwtToken = process.env.JWT_SECRET!;
-const jwtResetPassword = process.env.JWT_RESET_PASSWORD_SECRET!;
+const jwtToken: jwt.Secret = Env.get("JWT_SECRET");
+const jwtResetPassword = Env.get("JWT_RESET_PASSWORD_SECRET");
 
 export function generateToken(userId: number) {
     return jwt.sign(
@@ -29,6 +30,7 @@ export function verifyToken(token: string) {
 
     return decoded;
 }
+
 
 export function resetPasswordToken(userId: number) {
     return jwt.sign(
