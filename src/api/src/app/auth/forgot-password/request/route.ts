@@ -3,7 +3,7 @@ import {ZodError, z} from "zod";
 import {resetPasswordToken} from "@/core/api/Helpers/JWT";
 import ForgotPasswordSchema from "@/app/auth/forgot-password/request/Forgot-Password-Schema";
 import {Env} from "@/core/api/Helpers/Env";
-import {sendResetPasswordEmail} from "@/core/api/Helpers/sendResetPasswordEmail";
+import {sendResetPasswordEmail} from "@/core/api/services/emails/sendResetPasswordEmail";
 import {NextResponse} from "next/server";
 
 export async function POST(request: Request) {
@@ -23,9 +23,7 @@ export async function POST(request: Request) {
         const token:string = resetPasswordToken(user.id);
 
         const resetLink = `${Env.get("TRIPFY_API_BASE_URL")}/reset-password?token=${token}`;
-        console.log(123)
         const emailSent = await sendResetPasswordEmail(user.email, resetLink);
-        console.log(emailSent)
         if(!emailSent) {
             return NextResponse.json({
                 success: false,
@@ -39,6 +37,7 @@ export async function POST(request: Request) {
         });
 
     } catch (error) {
+        console.log(error)
         if (error instanceof ZodError) {
             return Response.json({errors: z.flattenError(error)}, {status: 400})
         }

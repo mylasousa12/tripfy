@@ -3,27 +3,36 @@ import {verifyResetPasswordToken} from "@/core/api/Helpers/JWT";
 import * as bcrypt from 'bcrypt';
 import {prisma} from "@/lib/prisma";
 import {NextResponse} from "next/server";
+import {z, ZodError} from "zod";
 
-export async function POST(req: Request){
+export async function POST(req: Request) {
     const body = await req.json();
 
     try {
-        const validation: {email: string, token: string, password: string} = await ResetPasswordSchema.parseAsync(body);
+        const validation: { token: string, password: string } = await ResetPasswordSchema.parseAsync(body);
 
-        const verifyToken = verifyResetPasswordToken(validation.token);
+        const verifyToken: { id: number, type: "reset-password" } = verifyResetPasswordToken(validation.token);
 
-        const hashedPassword = await bcrypt.hash(validation.password, 10);
+        const hashedPassword: string = await bcrypt.hash(validation.password, 10);
 
-        const updateUserPassword: {email: string} = await prisma.users.update({
-           where: {
-               email: validation.email
-           },
+        await prisma.users.update({
+            where: {
+                id: verifyToken.id
+            },
             data: {
                 password: hashedPassword
             }
         });
 
-        return NextResponse.json
+        return NextResponse.json({
+            success: true,
+            message: "Password update"
+        });
 
-    } catch () {}
+    } catch (error) {
+        if (error instanceof ZodError) {
+            return Response.json({errors: z.flattenError(error)}, {status: 400})
+        }
+        return Response.json({message: "Server error"}, {status: 500});
+    }
 }

@@ -50,14 +50,13 @@ export function verifyResetPasswordToken(token: string) {
         token,
         jwtResetPassword,
     ) as {
-        id: string,
-        type: string;
+        id: number,
+        type: "reset-password";
     };
 
-    if (decoded.type !== "reset-password") {
-        throw new Error('Invalid token type');
+    if(decoded.type !== "reset-password") {
+        throw new Error("Invalid token");
     }
-
     return decoded;
 }
 
