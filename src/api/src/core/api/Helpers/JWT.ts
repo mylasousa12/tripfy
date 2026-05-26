@@ -40,7 +40,7 @@ export function resetPasswordToken(userId: number) {
         },
         jwtResetPassword,
         {
-            expiresIn: "15m"
+            expiresIn: "1d"
         }
     );
 }
@@ -50,7 +50,7 @@ export function verifyResetPasswordToken(token: string) {
         token,
         jwtResetPassword,
     ) as {
-        id: number,
+        userId: number,
         type: "reset-password";
     };
 

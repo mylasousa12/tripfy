@@ -10,9 +10,14 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     try {
-        const validation : {email:string} = await ForgotPasswordSchema.parseAsync(body);
+        const validation: { email: string } = await ForgotPasswordSchema.parseAsync(body);
 
-        const user : {email:string, id: number} | null = await prisma.users.findUnique({
+        const user: {
+            email: string,
+            id: number,
+            reset_password_token: string | null,
+            reset_password_token_expires_at: Date | null
+        } | null = await prisma.users.findUnique({
             where: {email: validation.email}
         });
 
@@ -20,24 +25,44 @@ export async function POST(request: Request) {
             return retrieveFailResponse();
         }
 
-        const token:string = resetPasswordToken(user.id);
+        if(user.reset_password_token !== null && user.reset_password_token_expires_at && new Date(user.reset_password_token_expires_at) > new Date()){
+           if (!await sendMail(user.email, user.reset_password_token)) {
+                return NextResponse.json({
+                    success: false,
+                    status: 500
+                });
+            }
+            return NextResponse.json({
+                success: true,
+                status: 200
+            });
+        }
 
-        const resetLink = `${Env.get("TRIPFY_API_BASE_URL")}/reset-password?token=${token}`;
-        const emailSent = await sendResetPasswordEmail(user.email, resetLink);
-        if(!emailSent) {
+        const token: string = resetPasswordToken(user.id);
+
+        await prisma.users.update({
+            where: {
+                id: user.id
+            }
+            ,
+            data: {
+                reset_password_token: token,
+                reset_password_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
+            }
+        });
+
+        if (!await sendMail(user.email, token)) {
             return NextResponse.json({
                 success: false,
                 status: 500
             });
         }
-
         return NextResponse.json({
             success: true,
             status: 200
         });
 
     } catch (error) {
-        console.log(error)
         if (error instanceof ZodError) {
             return Response.json({errors: z.flattenError(error)}, {status: 400})
         }
@@ -45,10 +70,18 @@ export async function POST(request: Request) {
         return Response.json({message: "Server error"}, {status: 500});
     }
 
-    function retrieveFailResponse() {
+    function retrieveFailResponse(): Response {
         return Response.json(
             {error: 'Invalid credential'},
             {status: 401}
         );
+    }
+
+    function mountResetLinkByToken(token:string): string {
+        return `${Env.get("TRIPFY_API_BASE_URL")}/reset-password?token=${token}`;
+    }
+
+    async function  sendMail(email:string, token: string): Promise<string> {
+        return await sendResetPasswordEmail(email, mountResetLinkByToken(token));
     }
 }
