@@ -1,35 +1,17 @@
 import {NextRequest, NextResponse} from "next/server";
-import {verifyToken} from "@/core/api/Helpers/JWT";
+import Auth from "@/core/api/Helpers/Auth";
+import AppResponse from "@/core/api/Adapters/AppResponse";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     if (publicRoutes().includes(request.nextUrl.pathname)) {
-        console.log(request.nextUrl.pathname);
         return NextResponse.next();
-    } //Se a rota atual estiver dentro das rotas públicas, permite continuar normalmente.
-
-    const authHeader = request.headers.get("authorization");
-
-    const token:string | undefined = authHeader?.split('')[1];
-    console.log(token)
-
-    if (!token){
-        return NextResponse.json(
-            {
-                success: false,
-                message: 'Unauthorized'
-            },
-            {
-                status: 401
-            }
-        );
     }
 
-    const decoded = verifyToken(token);
+    if (await Auth.user(request) === null) {
+        return AppResponse.unauthorized();
+    }
 
-    return NextResponse.json({
-        user:decoded
-    });
-
+    return NextResponse.next();
 }
 
 function publicRoutes(): Array<string> {
@@ -37,6 +19,6 @@ function publicRoutes(): Array<string> {
         '/auth/login',
         '/auth/register',
         '/auth/forgot-password',
-        '/auth/forgot-password/request',
+        '/auth/forgot-password/request'
     ];
 }

@@ -20,8 +20,8 @@ export function verifyToken(token: string) {
         token,
         jwtToken,
     ) as {
-        id: string,
-        type: string;
+        userId: number,
+        type: "auth";
     };
 
     if (decoded.type !== "auth") {

@@ -1,9 +1,9 @@
 import {verifyResetPasswordToken} from "@/core/api/Helpers/JWT";
 import * as bcrypt from 'bcrypt';
 import {prisma} from "@/lib/prisma";
-import {NextResponse} from "next/server";
 import {z, ZodError} from "zod";
 import ResetPasswordSchema from "@/app/auth/forgot-password/ResetPasswordSchema";
+import AppResponse from "@/core/api/Adapters/AppResponse";
 
 export async function POST(req: Request) {
     const body = await req.json();
@@ -26,10 +26,7 @@ export async function POST(req: Request) {
         });
 
         if (!user) {
-            return NextResponse.json({
-                success: false,
-                message: "Unauthorized"
-            }, {status: 400})
+            return AppResponse.unauthorized();
         }
 
         const hashedPassword: string = await bcrypt.hash(validation.password, 10);
@@ -45,14 +42,11 @@ export async function POST(req: Request) {
             }
         });
 
-        return NextResponse.json({
-            success: true,
-            message: "Password update"
-        });
+        return AppResponse.success();
 
     } catch (error) {
         if (error instanceof ZodError) {
-            return Response.json({errors: z.flattenError(error)}, {status: 400})
+            return AppResponse.json({errors: z.flattenError(error)})
         }
         return Response.json({message: "Server error", error: error}, {status: 500});
     }

@@ -4,7 +4,7 @@ import {resetPasswordToken} from "@/core/api/Helpers/JWT";
 import ForgotPasswordSchema from "@/app/auth/forgot-password/request/Forgot-Password-Schema";
 import {Env} from "@/core/api/Helpers/Env";
 import {sendResetPasswordEmail} from "@/core/api/services/emails/sendResetPasswordEmail";
-import {NextResponse} from "next/server";
+import AppResponse from "@/core/api/Adapters/AppResponse";
 
 export async function POST(request: Request) {
     const body = await request.json();
@@ -25,17 +25,11 @@ export async function POST(request: Request) {
             return retrieveFailResponse();
         }
 
-        if(user.reset_password_token !== null && user.reset_password_token_expires_at && new Date(user.reset_password_token_expires_at) > new Date()){
-           if (!await sendMail(user.email, user.reset_password_token)) {
-                return NextResponse.json({
-                    success: false,
-                    status: 500
-                });
+        if (user.reset_password_token !== null && user.reset_password_token_expires_at && new Date(user.reset_password_token_expires_at) > new Date()) {
+            if (!await sendMail(user.email, user.reset_password_token)) {
+                return AppResponse.serverError();
             }
-            return NextResponse.json({
-                success: true,
-                status: 200
-            });
+            return AppResponse.success();
         }
 
         const token: string = resetPasswordToken(user.id);
@@ -52,36 +46,26 @@ export async function POST(request: Request) {
         });
 
         if (!await sendMail(user.email, token)) {
-            return NextResponse.json({
-                success: false,
-                status: 500
-            });
+            return AppResponse.serverError();
         }
-        return NextResponse.json({
-            success: true,
-            status: 200
-        });
+        return AppResponse.success();
 
     } catch (error) {
         if (error instanceof ZodError) {
-            return Response.json({errors: z.flattenError(error)}, {status: 400})
+            return AppResponse.json({errors: z.flattenError(error)})
         }
-
-        return Response.json({message: "Server error"}, {status: 500});
+        return AppResponse.serverError();
     }
 
     function retrieveFailResponse(): Response {
-        return Response.json(
-            {error: 'Invalid credential'},
-            {status: 401}
-        );
+        return AppResponse.unauthorized();
     }
 
-    function mountResetLinkByToken(token:string): string {
+    function mountResetLinkByToken(token: string): string {
         return `${Env.get("TRIPFY_API_BASE_URL")}/reset-password?token=${token}`;
     }
 
-    async function  sendMail(email:string, token: string): Promise<string> {
+    async function sendMail(email: string, token: string): Promise<string> {
         return await sendResetPasswordEmail(email, mountResetLinkByToken(token));
     }
 }
